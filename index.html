@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OmniPlaylist — 音楽リンクプレイリスト</title>
+<style>
+:root{--bg:#090b0d;--panel:#111518;--panel2:#0d1113;--line:#293235;--text:#f1f5f3;--muted:#899692;--accent:#7c5cff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#1b1730,#090b0d 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
+aside{border-right:1px solid var(--line);padding:22px 16px;background:#090b0de8;backdrop-filter:blur(16px)}.brand{font-size:21px;font-weight:900;margin:0 8px 28px}.brand span{color:#9c88ff}
+nav button{width:100%;border:0;background:transparent;color:#a8b2b0;text-align:left;padding:12px 13px;border-radius:10px;margin:3px 0}nav button.active,nav button:hover{background:#1a1825;color:#fff}
+.side{position:absolute;bottom:18px;width:210px;color:#64716e;font-size:12px;line-height:1.5}
+main{max-width:1400px;width:100%;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:20px}h1{margin:0;font-size:30px}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+.layout{display:grid;grid-template-columns:minmax(300px,390px) 1fr;gap:18px}.card{background:#111518ed;border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 16px 45px #0004}
+.field{margin-bottom:13px}label{display:block;color:#aab5b1;font-size:12px;margin-bottom:6px}input,select{width:100%;padding:10px;border-radius:9px;border:1px solid #303b3e;background:#0a0e10;color:#fff;outline:0}input:focus,select:focus{border-color:#806bff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.btn{border:1px solid #344043;background:#141a1c;color:#e6ecea;padding:9px 11px;border-radius:9px}.primary{border:0;background:linear-gradient(135deg,#8d7aff,#6753e8);color:#fff;font-weight:800;padding:11px;border-radius:10px;width:100%}
+.import{display:flex;gap:8px;margin-bottom:13px}.import .btn{flex:1}.tracks{display:grid;gap:8px}.track{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0d1214}.cover{width:52px;height:52px;border-radius:8px;display:grid;place-items:center;font-size:20px;background:#1b2023}.track h3{font-size:14px;margin:0 0 3px}.track-title{color:var(--text);text-decoration:none}.track-title:hover{text-decoration:underline;color:#b8abff}.meta{font-size:11px;color:var(--muted)}.service{display:inline-block;padding:3px 6px;border-radius:999px;font-size:10px;margin-left:5px;background:#1c2024}.spotify{color:#73e3a4}.youtube{color:#ff7f8b}.soundcloud{color:#ffad72}.amazon{color:#9ec5ff}.youtubemusic{color:#ff8b8b}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.actions .btn{font-size:11px;padding:7px 8px}
+.search{display:grid;grid-template-columns:1fr 130px;gap:8px;margin-bottom:10px}.empty{padding:60px 20px;text-align:center;color:#66736f;border:1px dashed #344044;border-radius:12px}.count{font-size:12px;color:var(--muted)}
+.notice{margin-top:13px;padding:10px 12px;border-left:3px solid #8d7aff;background:#17142a;color:#bcb5d5;font-size:11px;line-height:1.55}.toast{position:fixed;right:18px;bottom:18px;background:#171d1f;border:1px solid #3a4548;padding:11px 13px;border-radius:10px;display:none;font-size:12px}.toast.show{display:block}
+.modal{position:fixed;inset:0;background:#000a;display:none;place-items:center;padding:20px}.modal.open{display:grid}.modalbox{width:min(620px,100%);background:#13191b;border:1px solid #394447;border-radius:16px;padding:20px}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{display:none}main{padding:15px}.layout{grid-template-columns:1fr}.track{grid-template-columns:46px 1fr}.track .actions{grid-column:2;justify-content:flex-start}.cover{width:46px;height:46px}.search{grid-template-columns:1fr}}
+
+.side-title{margin:18px 8px 7px;color:#65716e;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+#sidebarPlaylists{display:grid;gap:5px;max-height:46vh;overflow:auto}
+.sidebar-playlist{display:grid;grid-template-columns:36px 1fr;align-items:center;gap:8px;width:100%;padding:7px;border:0;border-radius:9px;background:transparent;color:#b2bcba;text-align:left}
+.sidebar-playlist:hover,.sidebar-playlist.active{background:#1a1825;color:#fff}
+.sidebar-playlist img,.sidebar-playlist .sp-cover{width:36px;height:36px;border-radius:7px;object-fit:cover;background:#1b2023;display:grid;place-items:center}
+.sidebar-playlist-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.new-playlist-nav{width:100%;margin-top:7px;border:1px dashed #344043;background:transparent;color:#899592;border-radius:9px;padding:8px;font-size:11px}
+.playlist-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}.playlist-toolbar .search{flex:1;margin:0}.add-song-btn{width:auto;white-space:nowrap;padding:10px 15px}
+
+.manager-row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0d1214}
+.manager-cover{width:64px;height:64px;border-radius:9px;object-fit:cover;background:#1b2023;display:grid;place-items:center;font-size:22px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+<div class="brand">Omni<span>Playlist</span></div>
+<nav>
+<button class="active" data-page="playlist">♫ プレイリスト</button>
+<div class="side-title">プレイリスト</div>
+<div id="sidebarPlaylists"></div>
+<button class="new-playlist-nav" id="newPlaylistNav">＋ 新しいプレイリスト</button><button data-page="playlists" style="margin-top:6px">▦ 管理画面</button>
+</nav>
+<div class="side">Spotify・YouTube・SoundCloudの音楽リンクを1つのプレイリストで管理します。アプリ内では音楽を再生しません。</div>
+</aside>
+
+<main>
+<section id="playlist" class="page">
+<div class="top">
+<div style="display:flex;gap:12px;align-items:center">
+<div id="playlistCoverSmall" class="cover" style="width:62px;height:62px;font-size:25px">♫</div>
+<div><h1 id="playlistTitle">My Playlist</h1><div class="sub">複数サービスの曲を1つにまとめて管理</div></div>
+</div>
+<div class="count" id="count"></div>
+</div>
+<div class="card">
+<div class="playlist-toolbar">
+ <div class="search"><input id="search" placeholder="曲名・アーティストを検索"><select id="filter"><option value="">すべて</option><option value="Spotify">Spotify</option><option value="YouTube">YouTube</option><option value="YouTube Music">YouTube Music</option><option value="SoundCloud">SoundCloud</option><option value="Amazon Music">Amazon Music</option></select></div>
+ <button class="primary add-song-btn" id="openAddSong">＋ 曲を追加</button>
+</div>
+<div id="tracks" class="tracks"></div>
+</div>
+</section>
+
+
+<section id="playlists" class="page" style="display:none">
+<div class="top"><div><h1>プレイリスト管理</h1><div class="sub">プレイリストの作成・画像変更・削除をまとめて管理できます。</div></div></div>
+<div class="card">
+<div class="row">
+<div class="field"><label>プレイリスト名</label><input id="managePlaylistName" placeholder="プレイリスト名"></div>
+<div class="field"><label>プレイリスト画像URL（任意）</label><input id="managePlaylistCover" placeholder="https://..."></div>
+</div>
+<div class="actions">
+<button class="primary" id="createManagedPlaylist" style="width:auto">＋ 作成</button>
+<button class="btn" id="manageCoverFileBtn">画像をアップロード</button>
+<input id="manageCoverFile" type="file" accept="image/*" hidden>
+</div>
+<div id="manageCoverPreview" style="margin-top:10px"></div>
+<div id="managerList" style="display:grid;gap:9px;margin-top:16px"></div>
+</div>
+</section>
+</main>
+</div>
+
+
+<div class="modal" id="addSongModal"><div class="modalbox">
+<h2>曲を追加</h2>
+<div class="field"><label>音楽URL</label><input id="url" placeholder="Spotify / YouTube / SoundCloud のURL"></div>
+<div class="row">
+<div class="field"><label>サービス</label><select id="service"><option value="auto">自動判定</option><option>Spotify</option><option>YouTube</option><option>YouTube Music</option><option>SoundCloud</option><option>Amazon Music</option></select></div>
+<div class="field"><label>タイトル</label><input id="title" placeholder="曲名"></div>
+</div>
+<div class="row">
+<div class="field"><label>アーティスト</label><input id="artist" placeholder="アーティスト名"></div>
+<div class="field"><label>ジャケット画像URL（任意）</label><input id="cover" placeholder="https://..."></div>
+</div>
+<div class="actions" style="margin-top:8px">
+<button class="btn" id="songCoverFileBtn">画像をアップロード</button>
+<input id="songCoverFile" type="file" accept="image/*" hidden>
+</div>
+<div id="songCoverPreview" style="margin-top:8px"></div>
+<div class="modal-actions"><button class="btn" id="cancelAddSong">キャンセル</button><button class="primary" style="width:auto" id="addBtn">追加</button></div>
+</div></div>
+
+<div class="modal" id="modal"><div class="modalbox">
+<h2 id="modalTitle">曲を編集</h2>
+<div class="field"><label>タイトル</label><input id="editTitle"></div>
+<div class="field"><label>アーティスト</label><input id="editArtist"></div>
+<div class="field"><label>URL</label><input id="editUrl"></div>
+<div class="field"><label>ジャケット画像</label>
+  <div id="editCoverPreview" style="margin-bottom:8px"></div>
+  <input id="editCover" placeholder="画像URL（任意）">
+  <div class="actions" style="margin-top:8px">
+    <button class="btn" id="editCoverFileBtn">画像をアップロード</button>
+    <input id="editCoverFile" type="file" accept="image/*" hidden>
+    <button class="btn" id="removeCover">画像を削除</button>
+  </div>
+</div>
+<div class="modal-actions"><button class="btn" id="cancelEdit">キャンセル</button><button class="primary" style="width:auto" id="saveEdit">保存</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='omni_playlists_v3';
+const $=id=>document.getElementById(id);
+let playlists=JSON.parse(localStorage.getItem(KEY)||'[]');
+let currentPlaylistId=playlists[0]?.id||null;
+let editIndex=-1,editCoverData='';
+
+function ensurePlaylists(){
+ if(!playlists.length){
+  playlists=[{id:crypto.randomUUID?.()||String(Date.now()),name:'My Playlist',cover:'',tracks:[]}];
+  currentPlaylistId=playlists[0].id;
+  saveAll();
+ }
+ if(!currentPlaylistId||!playlists.some(p=>p.id===currentPlaylistId)) currentPlaylistId=playlists[0].id;
+}
+function currentPlaylist(){return playlists.find(p=>p.id===currentPlaylistId)}
+function tracks(){return currentPlaylist().tracks}
+function saveAll(){localStorage.setItem(KEY,JSON.stringify(playlists))}
+ensurePlaylists();
+
+function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1800)}
+function detect(url){
+ const u=url.toLowerCase();
+ if(u.includes('spotify.com'))return 'Spotify';
+ if(u.includes('soundcloud.com'))return 'SoundCloud';
+ if(u.includes('music.youtube.com'))return 'YouTube Music';
+ if(u.includes('youtube.com')||u.includes('youtu.be'))return 'YouTube';
+ if(u.includes('music.amazon.')||u.includes('amazon.co.jp/music')||u.includes('amazon.com/music'))return 'Amazon Music';
+ return '';
+}
+function serviceClass(s){return s.toLowerCase()}
+function icon(s){
+ if(s==='Spotify')return '🟢';
+ if(s==='YouTube')return '▶️';
+ if(s==='YouTube Music')return '🎵';
+ if(s==='SoundCloud')return '🟠';
+ if(s==='Amazon Music')return '🔵';
+ return '🎵';
+}
+function escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+function render(){
+ const p=currentPlaylist(), list=p.tracks;
+ $('playlistTitle').textContent=p.name;
+ $('count').textContent=list.length+'曲';
+ $('playlistCoverSmall').innerHTML=p.cover?`<img src="${escape(p.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.remove()">`:'♫';
+ renderSidebarPlaylists();
+ const q=$('search').value.toLowerCase(),f=$('filter').value;
+ const arr=list.map((x,i)=>({...x,i})).filter(x=>(!q||(x.title+' '+x.artist).toLowerCase().includes(q))&&(!f||x.service===f));
+ $('tracks').innerHTML=arr.length?arr.map(x=>`
+ <article class="track" draggable="true" data-index="${x.i}">
+  <div class="cover">${x.cover?`<img src="${escape(x.cover)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px" onerror="this.remove()">`:icon(x.service)}</div>
+  <div><h3><a class="track-title" href="${escape(x.url)}" target="_blank" rel="noopener">${escape(x.title||'無題')}</a></h3><div class="meta">${escape(x.artist||'アーティスト未設定')} <span class="service ${serviceClass(x.service)}">${escape(x.service)}</span></div></div>
+  <div class="actions"><button class="btn edit" data-index="${x.i}">編集</button><button class="btn del" data-index="${x.i}">削除</button></div>
+ </article>`).join(''):'<div class="empty">このプレイリストにはまだ曲がありません。<br>「＋ 曲を追加」から曲を登録してください。</div>';
+ document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openEdit(Number(b.dataset.index)));
+ document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{if(confirm('この曲を削除しますか？')){currentPlaylist().tracks.splice(Number(b.dataset.index),1);saveAll();render();toast('削除しました')}});
+}
+function renderSidebarPlaylists(){
+ const box=$('sidebarPlaylists');if(!box)return;
+ box.innerHTML=playlists.map(p=>`
+ <button class="sidebar-playlist ${p.id===currentPlaylistId?'active':''}" data-id="${p.id}">
+  ${p.cover?`<img src="${escape(p.cover)}" alt="">`:`<span class="sp-cover">♫</span>`}
+  <span class="sidebar-playlist-name">${escape(p.name)}</span>
+ </button>`).join('');
+ box.querySelectorAll('.sidebar-playlist').forEach(b=>b.onclick=()=>{
+   currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');
+ });
+}
+function renderPlaylistManager(){
+ const box=$('playlistManager');if(!box)return;
+ box.innerHTML=playlists.map(p=>`<div class="track" style="grid-template-columns:62px 1fr auto">
+ <div class="cover" style="width:62px;height:62px">${p.cover?`<img src="${escape(p.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.remove()">`:'♫'}</div>
+ <div><h3>${escape(p.name)}</h3><div class="meta">${p.tracks.length}曲</div></div>
+ <div class="actions"><button class="btn selectPlaylist" data-id="${p.id}">開く</button><button class="btn deletePlaylist" data-id="${p.id}">削除</button></div>
+ </div>`).join('');
+ document.querySelectorAll('.selectPlaylist').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');toast('プレイリストを切り替えました')});
+ document.querySelectorAll('.deletePlaylist').forEach(b=>b.onclick=()=>{if(playlists.length===1){toast('最後のプレイリストは削除できません');return}if(confirm('このプレイリストと中の曲を削除しますか？')){playlists=playlists.filter(p=>p.id!==b.dataset.id);if(currentPlaylistId===b.dataset.id)currentPlaylistId=playlists[0].id;saveAll();render();toast('プレイリストを削除しました')}});
+}
+function openPage(id){
+ document.querySelectorAll('.page').forEach(x=>x.style.display='none');
+ const target=$(id);if(target)target.style.display='block';
+ document.querySelectorAll('nav button[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ if(id==='playlist')render();if(id==='playlists')renderManager();
+}
+document.querySelectorAll('nav button[data-page]').forEach(b=>b.onclick=()=>openPage(b.dataset.page));
+$('search').oninput=render;$('filter').onchange=render;
+
+
+
+function renderEditCover(){
+ const v=editCoverData||$('editCover').value.trim();
+ $('editCoverPreview').innerHTML=v
+  ? `<img src="${escape(v)}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #343e42" onerror="this.style.display='none'">`
+  : '<div style="width:96px;height:96px;border:1px dashed #3a4548;border-radius:10px;display:grid;place-items:center;color:#66736f;font-size:11px">画像なし</div>';
+}
+function openEdit(i){
+ editIndex=i;
+ editCoverData=currentPlaylist().tracks[i].cover||'';
+ $('editTitle').value=currentPlaylist().tracks[i].title||'';
+ $('editArtist').value=currentPlaylist().tracks[i].artist||'';
+ $('editUrl').value=currentPlaylist().tracks[i].url||'';
+ $('editCover').value=editCoverData.startsWith('data:')?'':editCoverData;
+ renderEditCover();
+ $('modal').classList.add('open')
+}
+$('cancelEdit').onclick=()=>$('modal').classList.remove('open');
+$('editCover').oninput=()=>{editCoverData=$('editCover').value.trim();renderEditCover()};
+$('editCoverFileBtn').onclick=()=>$('editCoverFile').click();
+$('editCoverFile').onchange=e=>{
+ const file=e.target.files[0];if(!file)return;
+ const r=new FileReader();
+ r.onload=()=>{editCoverData=r.result;$('editCover').value='';renderEditCover();toast('画像を読み込みました')};
+ r.readAsDataURL(file);
+};
+$('removeCover').onclick=()=>{editCoverData='';$('editCover').value='';renderEditCover()};
+$('saveEdit').onclick=()=>{if(editIndex<0)return;const u=$('editUrl').value.trim();try{new URL(u)}catch{toast('URLを確認してください');return}currentPlaylist().tracks[editIndex].title=$('editTitle').value.trim()||'無題';currentPlaylist().tracks[editIndex].artist=$('editArtist').value.trim();currentPlaylist().tracks[editIndex].url=u;currentPlaylist().tracks[editIndex].service=detect(u)||currentPlaylist().tracks[editIndex].service;currentPlaylist().tracks[editIndex].cover=editCoverData||'';saveAll();$('modal').classList.remove('open');render();toast('保存しました')};
+
+let newPlaylistCoverData='';
+function createPlaylistPrompt(){
+ const name=prompt('新しいプレイリスト名を入力してください：');
+ if(!name||!name.trim())return;
+ const p={id:crypto.randomUUID?.()||String(Date.now()),name:name.trim(),cover:'',tracks:[]};
+ playlists.push(p);currentPlaylistId=p.id;saveAll();render();toast('プレイリストを作成しました');
+}
+$('newPlaylistNav').onclick=createPlaylistPrompt;
+
+$('openAddSong').onclick=()=>{
+ $('url').value='';$('title').value='';$('artist').value='';$('cover').value='';$('service').value='auto';$('songCoverPreview').innerHTML='';
+ $('addSongModal').classList.add('open');
+};
+$('cancelAddSong').onclick=()=>$('addSongModal').classList.remove('open');
+let songCoverData='';
+$('cover').oninput=()=>{songCoverData=$('cover').value.trim();$('songCoverPreview').innerHTML=songCoverData?`<img src="${escape(songCoverData)}" style="width:80px;height:80px;object-fit:cover;border-radius:8px">`:''};
+$('songCoverFileBtn').onclick=()=>$('songCoverFile').click();
+$('songCoverFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{songCoverData=r.result;$('cover').value='';$('songCoverPreview').innerHTML=`<img src="${r.result}" style="width:80px;height:80px;object-fit:cover;border-radius:8px">`};r.readAsDataURL(f)};
+
+$('addBtn').onclick=()=>{
+ const url=$('url').value.trim();if(!url){toast('URLを入力してください');return}
+ let service=$('service').value==='auto'?detect(url):$('service').value;
+ if(!service){toast('Spotify / YouTube / SoundCloudのURLを入力してください');return}
+ try{new URL(url)}catch{toast('URLの形式を確認してください');return}
+ currentPlaylist().tracks.push({id:crypto.randomUUID?.()||String(Date.now()),url,service,title:$('title').value.trim()||'無題',artist:$('artist').value.trim(),cover:songCoverData||$('cover').value.trim(),created:Date.now()});
+ saveAll();$('addSongModal').classList.remove('open');render();toast('現在のプレイリストに追加しました');
+};
+
+
+let manageCoverData='';
+function renderManager(){
+ const box=$('managerList'); if(!box)return;
+ box.innerHTML=playlists.map(p=>`<div class="manager-row">
+  <div class="manager-cover">${p.cover?`<img src="${escape(p.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" onerror="this.remove()">`:'♫'}</div>
+  <div><b>${escape(p.name)}</b><div class="meta">${p.tracks.length}曲 ${p.id===currentPlaylistId?'・選択中':''}</div></div>
+  <div class="actions">
+   <button class="btn manageSelect" data-id="${p.id}">選択</button>
+   <button class="btn manageEdit" data-id="${p.id}">編集</button>
+   <button class="btn manageDelete" data-id="${p.id}">削除</button>
+  </div>
+ </div>`).join('');
+ document.querySelectorAll('.manageSelect').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();renderManager();openPage('playlist');toast('プレイリストを選択しました')});
+ document.querySelectorAll('.manageDelete').forEach(b=>b.onclick=()=>{if(playlists.length===1){toast('最後のプレイリストは削除できません');return}if(confirm('このプレイリストと中の曲を削除しますか？')){playlists=playlists.filter(p=>p.id!==b.dataset.id);if(currentPlaylistId===b.dataset.id)currentPlaylistId=playlists[0].id;saveAll();render();renderManager();toast('削除しました')}});
+ document.querySelectorAll('.manageEdit').forEach(b=>b.onclick=()=>{
+  const p=playlists.find(x=>x.id===b.dataset.id); if(!p)return;
+  const name=prompt('プレイリスト名',p.name); if(name===null)return;
+  p.name=name.trim()||p.name;
+  const cover=prompt('画像URL（変更しない場合は空欄）',p.cover||'');
+  if(cover!==null && cover.trim())p.cover=cover.trim();
+  saveAll();render();renderManager();toast('更新しました');
+ });
+}
+$('manageCoverFileBtn').onclick=()=>$('manageCoverFile').click();
+$('manageCoverFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{manageCoverData=r.result;$('manageCoverPreview').innerHTML=`<img src="${r.result}" style="width:96px;height:96px;object-fit:cover;border-radius:10px">`};r.readAsDataURL(f)};
+$('createManagedPlaylist').onclick=()=>{
+ const name=$('managePlaylistName').value.trim()||'新しいプレイリスト';
+ const p={id:crypto.randomUUID?.()||String(Date.now()),name,cover:manageCoverData||$('managePlaylistCover').value.trim(),tracks:[]};
+ playlists.push(p);currentPlaylistId=p.id;saveAll();$('managePlaylistName').value='';$('managePlaylistCover').value='';manageCoverData='';$('manageCoverPreview').innerHTML='';render();renderManager();toast('プレイリストを作成しました');
+};
+
+render();renderManager();
+
+</script>
+</body></html>
