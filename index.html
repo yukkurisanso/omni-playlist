@@ -33,9 +33,40 @@ main{max-width:1400px;width:100%;margin:auto;padding:28px}.top{display:flex;just
 
 .manager-row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0d1214}
 .manager-cover{width:64px;height:64px;border-radius:9px;object-fit:cover;background:#1b2023;display:grid;place-items:center;font-size:22px}
+
+/* Mobile playlist drawer */
+.mobile-menu-btn{display:none}
+.mobile-drawer-backdrop{display:none}
+@media(max-width:900px){
+  .mobile-menu-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:42px;height:42px;border:1px solid #344043;border-radius:10px;
+    background:#141a1c;color:#fff;font-size:20px;flex:0 0 auto;
+  }
+  aside{
+    display:block;position:fixed;z-index:1000;left:0;top:0;bottom:0;
+    width:min(290px,82vw);transform:translateX(-105%);
+    transition:transform .22s ease;box-shadow:18px 0 45px #0008;
+    overflow-y:auto;
+  }
+  aside.mobile-open{transform:translateX(0)}
+  .mobile-drawer-backdrop{
+    position:fixed;inset:0;z-index:999;background:#0009;
+    backdrop-filter:blur(2px);
+  }
+  .mobile-drawer-backdrop.open{display:block}
+  main{padding:15px}
+  .top{gap:9px}
+  .top>div:first-child{min-width:0}
+  #playlistTitle{font-size:23px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .playlist-toolbar{align-items:stretch;flex-direction:column}
+  .playlist-toolbar .search{width:100%}
+  .add-song-btn{width:100%}
+}
 </style>
 </head>
 <body>
+<div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop"></div>
 <div class="app">
 <aside>
 <div class="brand">Omni<span>Playlist</span></div>
@@ -127,6 +158,20 @@ main{max-width:1400px;width:100%;margin:auto;padding:28px}.top{display:flex;just
 <script>
 const KEY='omni_playlists_v3';
 const $=id=>document.getElementById(id);
+const mobileMenuBtn=$('mobileMenuBtn');
+const mobileAside=document.querySelector('aside');
+const mobileBackdrop=$('mobileDrawerBackdrop');
+function closeMobileDrawer(){
+ if(mobileAside)mobileAside.classList.remove('mobile-open');
+ if(mobileBackdrop)mobileBackdrop.classList.remove('open');
+}
+function openMobileDrawer(){
+ if(mobileAside)mobileAside.classList.add('mobile-open');
+ if(mobileBackdrop)mobileBackdrop.classList.add('open');
+}
+if(mobileMenuBtn)mobileMenuBtn.onclick=openMobileDrawer;
+if(mobileBackdrop)mobileBackdrop.onclick=closeMobileDrawer;
+
 let playlists=JSON.parse(localStorage.getItem(KEY)||'[]');
 let currentPlaylistId=playlists[0]?.id||null;
 let editIndex=-1,editCoverData='';
@@ -190,7 +235,7 @@ function renderSidebarPlaylists(){
   <span class="sidebar-playlist-name">${escape(p.name)}</span>
  </button>`).join('');
  box.querySelectorAll('.sidebar-playlist').forEach(b=>b.onclick=()=>{
-   currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');
+   currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();
  });
 }
 function renderPlaylistManager(){
@@ -200,7 +245,7 @@ function renderPlaylistManager(){
  <div><h3>${escape(p.name)}</h3><div class="meta">${p.tracks.length}曲</div></div>
  <div class="actions"><button class="btn selectPlaylist" data-id="${p.id}">開く</button><button class="btn deletePlaylist" data-id="${p.id}">削除</button></div>
  </div>`).join('');
- document.querySelectorAll('.selectPlaylist').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');toast('プレイリストを切り替えました')});
+ document.querySelectorAll('.selectPlaylist').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();toast('プレイリストを切り替えました')});
  document.querySelectorAll('.deletePlaylist').forEach(b=>b.onclick=()=>{if(playlists.length===1){toast('最後のプレイリストは削除できません');return}if(confirm('このプレイリストと中の曲を削除しますか？')){playlists=playlists.filter(p=>p.id!==b.dataset.id);if(currentPlaylistId===b.dataset.id)currentPlaylistId=playlists[0].id;saveAll();render();toast('プレイリストを削除しました')}});
 }
 function openPage(id){
@@ -209,7 +254,7 @@ function openPage(id){
  document.querySelectorAll('nav button[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  if(id==='playlist')render();if(id==='playlists')renderManager();
 }
-document.querySelectorAll('nav button[data-page]').forEach(b=>b.onclick=()=>openPage(b.dataset.page));
+document.querySelectorAll('nav button[data-page]').forEach(b=>b.onclick=()=>{openPage(b.dataset.page);closeMobileDrawer();});
 $('search').oninput=render;$('filter').onchange=render;
 
 
@@ -247,7 +292,7 @@ function createPlaylistPrompt(){
  const name=prompt('新しいプレイリスト名を入力してください：');
  if(!name||!name.trim())return;
  const p={id:crypto.randomUUID?.()||String(Date.now()),name:name.trim(),cover:'',tracks:[]};
- playlists.push(p);currentPlaylistId=p.id;saveAll();render();toast('プレイリストを作成しました');
+ playlists.push(p);currentPlaylistId=p.id;saveAll();render();closeMobileDrawer();toast('プレイリストを作成しました');
 }
 $('newPlaylistNav').onclick=createPlaylistPrompt;
 
