@@ -100,7 +100,12 @@ main{max-width:1400px;width:100%;margin:auto;padding:28px}.top{display:flex;just
 
 
 <section id="playlists" class="page" style="display:none">
-<div class="top"><button class="mobile-menu-btn" id="mobileMenuBtnManager" aria-label="メニューを開く" style="margin-right:8px">☰</button><div><h1>プレイリスト管理</h1><div class="sub">プレイリストの作成・画像変更・削除をまとめて管理できます。</div></div></div></div>
+<div class="top">
+ <div style="display:flex;gap:10px;align-items:center;min-width:0">
+  <button class="mobile-menu-btn" id="mobileMenuBtnManager" aria-label="メニューを開く">☰</button>
+  <div><h1>プレイリスト管理</h1><div class="sub">プレイリストの作成・画像変更・削除をまとめて管理できます。</div></div>
+ </div>
+</div>
 <div class="card">
 <div class="row">
 <div class="field"><label>プレイリスト名</label><input id="managePlaylistName" placeholder="プレイリスト名"></div>
@@ -237,7 +242,7 @@ function renderSidebarPlaylists(){
   <span class="sidebar-playlist-name">${escape(p.name)}</span>
  </button>`).join('');
  box.querySelectorAll('.sidebar-playlist').forEach(b=>b.onclick=()=>{
-   currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();closeMobileDrawer();
+   currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();closeMobileDrawer();closeMobileDrawer();
  });
 }
 function renderPlaylistManager(){
@@ -247,7 +252,7 @@ function renderPlaylistManager(){
  <div><h3>${escape(p.name)}</h3><div class="meta">${p.tracks.length}曲</div></div>
  <div class="actions"><button class="btn selectPlaylist" data-id="${p.id}">開く</button><button class="btn deletePlaylist" data-id="${p.id}">削除</button></div>
  </div>`).join('');
- document.querySelectorAll('.selectPlaylist').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();closeMobileDrawer();toast('プレイリストを切り替えました')});
+ document.querySelectorAll('.selectPlaylist').forEach(b=>b.onclick=()=>{currentPlaylistId=b.dataset.id;saveAll();render();openPage('playlist');closeMobileDrawer();closeMobileDrawer();closeMobileDrawer();toast('プレイリストを切り替えました')});
  document.querySelectorAll('.deletePlaylist').forEach(b=>b.onclick=()=>{if(playlists.length===1){toast('最後のプレイリストは削除できません');return}if(confirm('このプレイリストと中の曲を削除しますか？')){playlists=playlists.filter(p=>p.id!==b.dataset.id);if(currentPlaylistId===b.dataset.id)currentPlaylistId=playlists[0].id;saveAll();render();toast('プレイリストを削除しました')}});
 }
 function openPage(id){
